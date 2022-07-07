@@ -1,0 +1,61 @@
+version: '3.9'
+
+# Mongo is not here, replica set requirement from Prisma
+services:
+  fds:
+    build: ./fds
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=mongodb://root:prisma@mongo:27018/tests?authSource=admin
+      - REDIS=redis://redis:6379/
+      # - RABBITMQ_URL=amqp://rabbit:5672
+    restart: on-failure
+    depends_on:
+      - redis
+      - mongo
+    #   - rabbit
+    networks:
+      - app-network
+  ui:
+    build: ./ui
+    ports: 
+      - "3000:3000"
+    depends_on: 
+      - fds
+    networks:
+      - app-network  
+  mongo:
+    build: ./mongodb_replica
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: prisma
+      MONGO_REPLICA_HOST: host.docker.internal
+      MONGO_REPLICA_PORT: 27018
+    ports:
+      - '27018:27018'
+    networks:
+      - app-network
+    volumes:
+      - data-volume:/data/db
+  redis:
+    image: redis/redis-stack
+    ports:
+      - "6379:6379"
+    networks: 
+      - app-network
+  # rabbit:
+  #   image: rabbitmq
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+  #   networks:
+  #     - app-network
+
+volumes:
+  data-volume:
+    driver: local
+
+networks:
+  app-network:
+      driver: bridge
