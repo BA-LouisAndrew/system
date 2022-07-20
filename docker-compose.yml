@@ -28,6 +28,8 @@ services:
       - fds
     networks:
       - app-network  
+    environment:
+      - VITE_BACKEND_URL=http://localhost:8000/
   mongo:
     build: ./mongodb_replica
     environment:
